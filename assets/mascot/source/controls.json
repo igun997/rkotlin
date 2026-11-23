@@ -1,0 +1,24 @@
+{
+  "controls": [
+    {
+      "sid": "bgColor",
+      "label": "Background color"
+    },
+    {
+      "sid": "cloudColor",
+      "label": "Cloud color"
+    },
+    {
+      "sid": "headColor",
+      "label": "Head color"
+    },
+    {
+      "sid": "eyeColor",
+      "label": "Eye color"
+    },
+    {
+      "sid": "gearColor",
+      "label": "Gear color"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+rkotlin
+Copyright (c) the rkotlin authors. MIT License (see LICENSE).
+
+This product bundles third-party agent skills under the Apache License, Version 2.0
+(see skills/kotlin/<skill>/LICENSE.txt). They are included unmodified; the upstream
+repository and exact commit of every skill are recorded in skills/kotlin/SOURCES.tsv.
+
+  JetBrains, Kotlin/kotlin-agent-skills  https://github.com/Kotlin/kotlin-agent-skills
+    kotlin-backend-jpa-entity-mapping
+    kotlin-tooling-agp9-migration
+    kotlin-tooling-cocoapods-spm-migration
+    kotlin-tooling-gradle-to-kotlin-toolchain-plugin
+    kotlin-tooling-gradle-to-kotlin-toolchain-project
+    kotlin-tooling-immutable-collections-0-5-x-migration
+    kotlin-tooling-java-to-kotlin
+    kotlin-tooling-kotlin-toolchain
+    kotlin-tooling-kotlin-toolchain-plugin-authoring
+    kotlin-tooling-native-build-performance
+
+  Google LLC, android/skills  https://github.com/android/skills
+    agp-9-upgrade
+    r8-analyzer
+    testing-setup
