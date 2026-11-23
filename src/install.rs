@@ -85,15 +85,28 @@ fn pick_device<'a>(ds: &'a [Device], want: Option<&str>) -> Result<&'a Device> {
         return match m.as_slice() {
             [d] => Ok(**d),
             _ => {
-                let others: Vec<String> = ds.iter().map(|d| format!("{} ({})", d.serial, d.state)).collect();
-                bail!("device `{w}` is not ready. adb sees: {}", if others.is_empty() { "nothing".into() } else { others.join(", ") })
+                let others: Vec<String> = ds
+                    .iter()
+                    .map(|d| format!("{} ({})", d.serial, d.state))
+                    .collect();
+                bail!(
+                    "device `{w}` is not ready. adb sees: {}",
+                    if others.is_empty() {
+                        "nothing".into()
+                    } else {
+                        others.join(", ")
+                    }
+                )
             }
         };
     }
     match ready.as_slice() {
         [d] => Ok(*d),
         [] => {
-            let seen: Vec<String> = ds.iter().map(|d| format!("{} ({})", d.serial, d.state)).collect();
+            let seen: Vec<String> = ds
+                .iter()
+                .map(|d| format!("{} ({})", d.serial, d.state))
+                .collect();
             bail!(
                 "no phone is ready for install. adb sees: {}. For `unauthorized`, accept the prompt on the phone; otherwise plug it in with USB debugging on (`rkotlin devices`)",
                 if seen.is_empty() { "nothing".into() } else { seen.join(", ") }
@@ -102,7 +115,10 @@ fn pick_device<'a>(ds: &'a [Device], want: Option<&str>) -> Result<&'a Device> {
         many => bail!(
             "{} phones are attached ({}); pick one with --install=SERIAL",
             many.len(),
-            many.iter().map(|d| d.serial.as_str()).collect::<Vec<_>>().join(", ")
+            many.iter()
+                .map(|d| d.serial.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
         ),
     }
 }
@@ -132,7 +148,10 @@ pub fn pick_apk(files: &[PathBuf], abi: Option<&str>) -> Result<PathBuf> {
             let by_abi: Vec<&PathBuf> = apks
                 .iter()
                 .copied()
-                .filter(|p| p.file_name().is_some_and(|n| n.to_string_lossy().contains(a)))
+                .filter(|p| {
+                    p.file_name()
+                        .is_some_and(|n| n.to_string_lossy().contains(a))
+                })
                 .collect();
             if by_abi.len() == 1 {
                 apks = by_abi;
@@ -209,17 +228,31 @@ mod tests {
             std::fs::create_dir_all(p.parent().unwrap()).unwrap();
             std::fs::write(&p, "x").unwrap();
             let t = std::time::SystemTime::now() - std::time::Duration::from_secs(age_secs);
-            std::fs::File::options().write(true).open(&p).unwrap().set_modified(t).unwrap();
+            std::fs::File::options()
+                .write(true)
+                .open(&p)
+                .unwrap()
+                .set_modified(t)
+                .unwrap();
             p
         };
         let debug = mk("app/build/outputs/apk/debug/app-debug.apk", 5);
         let meta = mk("app/build/outputs/apk/debug/output-metadata.json", 5);
-        let test = mk("app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk", 5);
+        let test = mk(
+            "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+            5,
+        );
         assert_eq!(pick_apk(&[debug.clone(), meta, test], None).unwrap(), debug);
 
         // an older release apk from an earlier build is ignored
-        let old = mk("app/build/outputs/apk/release/app-release-unsigned.apk", 3600);
-        assert_eq!(pick_apk(&[old.clone(), debug.clone()], None).unwrap(), debug);
+        let old = mk(
+            "app/build/outputs/apk/release/app-release-unsigned.apk",
+            3600,
+        );
+        assert_eq!(
+            pick_apk(&[old.clone(), debug.clone()], None).unwrap(),
+            debug
+        );
 
         // two apks from the same build are ambiguous
         let new_release = mk("app/build/outputs/apk/release/app-release-unsigned.apk", 5);

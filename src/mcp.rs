@@ -295,7 +295,12 @@ fn tool_gradle(args: &Value, def: &Option<String>) -> Result<Out> {
     if args["pull"].as_bool().unwrap_or(false) && res.code == 0 {
         match sess.pull(false) {
             Ok(f) if f.is_empty() => text += "\n(pull: no build outputs were produced)",
-            Ok(f) => text += &format!("\n(pulled {} output file(s) into build/ directories)", f.len()),
+            Ok(f) => {
+                text += &format!(
+                    "\n(pulled {} output file(s) into build/ directories)",
+                    f.len()
+                )
+            }
             Err(e) => text += &format!("\n(pull failed: {e:#})"),
         }
     }
@@ -328,7 +333,6 @@ fn tool_shell(args: &Value, def: &Option<String>) -> Result<Out> {
         structured: None,
     })
 }
-
 
 fn tool_sync(args: &Value, def: &Option<String>) -> Result<Out> {
     let sess = open(args, def)?;

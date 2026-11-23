@@ -330,7 +330,10 @@ mod tests {
         assert!(e < w, "{r}");
         assert_eq!(r.matches("Unresolved reference").count(), 1, "{r}");
         assert!(r.contains("1 error(s), 1 warning(s)"), "{r}");
-        assert!(r.contains("compilation failed (see diagnostics above)"), "{r}");
+        assert!(
+            r.contains("compilation failed (see diagnostics above)"),
+            "{r}"
+        );
         assert!(r.contains("BUILD FAILED in 4s"));
         assert!(!r.contains("> Task"), "{r}");
         assert!(r.contains("progress lines hidden"));
@@ -347,7 +350,10 @@ mod tests {
             "BUILD FAILED in 1s",
         ]);
         let r = c.render(1, 10_000);
-        assert!(r.contains("A.java:12: error: cannot find symbol\n        foo();\n        ^"), "{r}");
+        assert!(
+            r.contains("A.java:12: error: cannot find symbol\n        foo();\n        ^"),
+            "{r}"
+        );
         assert!(r.contains("1 error(s)"), "{r}");
     }
 
@@ -375,7 +381,10 @@ mod tests {
         ]);
         let r = c.render(1, 10_000);
         assert!(r.contains("== tests =="), "{r}");
-        assert!(r.contains("MathTest > adds() FAILED\n    org.opentest4j"), "{r}");
+        assert!(
+            r.contains("MathTest > adds() FAILED\n    org.opentest4j"),
+            "{r}"
+        );
         assert!(r.contains("3 tests completed, 1 failed"), "{r}");
         assert!(r.contains("There were failing tests"), "{r}");
     }
@@ -393,7 +402,10 @@ mod tests {
             "BUILD FAILED in 1s",
         ]);
         let r = c.render(1, 10_000);
-        assert!(r.contains("== failure ==\nA problem occurred configuring root project 'x'."), "{r}");
+        assert!(
+            r.contains("== failure ==\nA problem occurred configuring root project 'x'."),
+            "{r}"
+        );
         assert!(r.contains("SDK location not found"), "{r}");
     }
 

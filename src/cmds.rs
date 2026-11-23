@@ -60,7 +60,8 @@ pub fn gradle(
             info!("--pull: no build outputs (apk, aab, jar, distributions) were produced");
         }
         if let Some(serial) = &install {
-            let code = crate::install::install(&files, Some(serial.as_str()).filter(|s| !s.is_empty()))?;
+            let code =
+                crate::install::install(&files, Some(serial.as_str()).filter(|s| !s.is_empty()))?;
             if code != 0 {
                 return Ok(code);
             }

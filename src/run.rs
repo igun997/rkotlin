@@ -232,7 +232,15 @@ cd "$B"/{cwd}
         if matches!(spec.cmd, Cmd::Gradle(_))
             && (!remote.has_java || (!self.project.has_wrapper && !remote.has_gradle))
         {
-            info!("first use: installing a JDK{} on `{}` (one time only, takes a minute or two)", if self.project.has_wrapper { "" } else { " and Gradle" }, self.inst_name);
+            info!(
+                "first use: installing a JDK{} on `{}` (one time only, takes a minute or two)",
+                if self.project.has_wrapper {
+                    ""
+                } else {
+                    " and Gradle"
+                },
+                self.inst_name
+            );
             self.bootstrap(!self.project.has_wrapper, false)?;
         }
         let plan = if spec.sync {
@@ -453,10 +461,14 @@ pub fn setup_script(cfg: &crate::config::RemoteCfg, gradle: bool, android: bool)
     let jdk = cfg.jdk.unwrap_or(crate::config::DEFAULT_JDK);
     let gradle_version = cfg.gradle_version.as_deref().unwrap_or("");
     let packages: Vec<String> = if cfg.android_packages.is_empty() {
-        ["platform-tools", "platforms;android-35", "build-tools;35.0.0"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect()
+        [
+            "platform-tools",
+            "platforms;android-35",
+            "build-tools;35.0.0",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
     } else {
         cfg.android_packages.clone()
     };

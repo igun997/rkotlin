@@ -53,7 +53,9 @@ pub fn description_of(md: &str) -> String {
             }
         }
     }
-    desc.trim().trim_matches(|c| c == '"' || c == '\'').to_string()
+    desc.trim()
+        .trim_matches(|c| c == '"' || c == '\'')
+        .to_string()
 }
 
 pub fn bundled() -> Vec<Skill> {
@@ -135,8 +137,15 @@ pub fn list() -> String {
     let mut s = String::new();
     for sk in bundled() {
         let d: String = sk.description.chars().take(150).collect();
-        let ellipsis = if sk.description.chars().count() > 150 { "..." } else { "" };
-        s += &format!("{:<52} {}\n    {d}{ellipsis}\n    {}\n", sk.name, sk.origin, sk.url);
+        let ellipsis = if sk.description.chars().count() > 150 {
+            "..."
+        } else {
+            ""
+        };
+        s += &format!(
+            "{:<52} {}\n    {d}{ellipsis}\n    {}\n",
+            sk.name, sk.origin, sk.url
+        );
     }
     s
 }
@@ -160,7 +169,9 @@ mod tests {
             "Quoted."
         );
         assert_eq!(
-            description_of("---\nname: a\ndescription: Plain start\n  and continuation.\nlicense: x\n---\n"),
+            description_of(
+                "---\nname: a\ndescription: Plain start\n  and continuation.\nlicense: x\n---\n"
+            ),
             "Plain start and continuation."
         );
         assert_eq!(description_of("no frontmatter"), "");
@@ -197,17 +208,26 @@ mod tests {
     fn install_writes_both_agent_dirs_and_keeps_scripts_executable() {
         let d = std::env::temp_dir().join(format!("rkotlin-skills-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
-        let dirs = install(&d, &["kotlin-tooling-agp9-migration".into(), "r8-analyzer".into()]).unwrap();
+        let dirs = install(
+            &d,
+            &["kotlin-tooling-agp9-migration".into(), "r8-analyzer".into()],
+        )
+        .unwrap();
         assert_eq!(dirs.len(), 4);
         for root in [".claude/skills", ".agents/skills"] {
             assert!(d.join(root).join("r8-analyzer/SKILL.md").is_file());
-            let script = d.join(root).join("kotlin-tooling-agp9-migration/scripts/analyze-project.sh");
+            let script = d
+                .join(root)
+                .join("kotlin-tooling-agp9-migration/scripts/analyze-project.sh");
             assert!(script.is_file());
             use std::os::unix::fs::PermissionsExt;
             assert!(std::fs::metadata(script).unwrap().permissions().mode() & 0o111 != 0);
         }
         let e = install(&d, &["nope".into()]).unwrap_err().to_string();
-        assert!(e.contains("Available:") && e.contains("kotlin-tooling-java-to-kotlin"), "{e}");
+        assert!(
+            e.contains("Available:") && e.contains("kotlin-tooling-java-to-kotlin"),
+            "{e}"
+        );
         let _ = std::fs::remove_dir_all(&d);
     }
 }

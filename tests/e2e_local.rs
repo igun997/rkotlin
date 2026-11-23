@@ -89,7 +89,10 @@ impl Env {
         env.write("hello/build.gradle.kts", "// root\n");
         env.write("hello/app/build.gradle.kts", "// app\n");
         env.write("hello/app/src/Main.kt", "fun main() {}\n");
-        env.write("shared/settings.gradle.kts", "rootProject.name = \"shared\"\n");
+        env.write(
+            "shared/settings.gradle.kts",
+            "rootProject.name = \"shared\"\n",
+        );
         env.write("shared/marker.txt", "shared v1");
         env.write_exec(&env.project().join("gradlew"), FAKE_GRADLEW);
         env.write_config();
@@ -201,7 +204,10 @@ fn sync_run_incremental_and_paths() {
     assert!(out.contains("ARGS: --console=plain assembleDebug"), "{out}");
     assert!(out.contains("WRAPPED: 1"), "{out}");
     assert!(
-        out.contains(&format!("JAVA_HOME: {}/.rkotlin/jdk-21", env.home.display())),
+        out.contains(&format!(
+            "JAVA_HOME: {}/.rkotlin/jdk-21",
+            env.home.display()
+        )),
         "{out}"
     );
     assert!(
@@ -215,10 +221,15 @@ fn sync_run_incremental_and_paths() {
     // remote layout mirrors local absolute paths; outputs and excluded files stay local / remote only
     let ws = env.workspace();
     let mirror = ws.join(env.project().strip_prefix("/").unwrap());
-    assert!(mirror.join("app/build/outputs/apk/debug/app-debug.apk").is_file());
+    assert!(mirror
+        .join("app/build/outputs/apk/debug/app-debug.apk")
+        .is_file());
     assert!(mirror.join("gradlew").is_file());
     for hidden in ["secret.txt", "local.properties", "app/keystore.properties"] {
-        assert!(!mirror.join(hidden).exists(), "{hidden} must not be uploaded");
+        assert!(
+            !mirror.join(hidden).exists(),
+            "{hidden} must not be uploaded"
+        );
     }
     assert!(
         !env.project().join("app/build").exists(),
@@ -237,11 +248,19 @@ fn sync_run_incremental_and_paths() {
     // 3. one edit in the included build: only it is sent and the new content is seen
     env.write("shared/marker.txt", "shared v2");
     let o = env.run(&["build"]);
-    assert!(s(&o.stdout).contains("SHARED: shared v2"), "{}", s(&o.stdout));
+    assert!(
+        s(&o.stdout).contains("SHARED: shared v2"),
+        "{}",
+        s(&o.stdout)
+    );
     assert!(s(&o.stderr).contains("sync: 1 of"), "{}", s(&o.stderr));
 
     // 4. from a module directory: gradle gets -p <module>
-    let o = env.cmd_in(&env.project().join("app")).arg("test").output().unwrap();
+    let o = env
+        .cmd_in(&env.project().join("app"))
+        .arg("test")
+        .output()
+        .unwrap();
     assert!(
         s(&o.stdout).contains("ARGS: --console=plain -p app test"),
         "{}{}",
@@ -263,7 +282,10 @@ fn sync_run_incremental_and_paths() {
 
     // 7. deletions propagate; remote-only files survive; a `build` source package is not mistaken for output
     env.write("hello/app/src/extra.kt", "// temp\n");
-    env.write("hello/app/src/main/com/x/build/Info.kt", "package com.x.build\n");
+    env.write(
+        "hello/app/src/main/com/x/build/Info.kt",
+        "package com.x.build\n",
+    );
     env.age_files();
     env.run(&["remote", "sync"]);
     assert!(mirror.join("app/src/extra.kt").is_file());
@@ -272,8 +294,14 @@ fn sync_run_incremental_and_paths() {
     fs::remove_file(env.project().join("app/src/extra.kt")).unwrap();
     let o = env.run(&["remote", "sync"]);
     assert!(o.status.success(), "{}", s(&o.stderr));
-    assert!(!mirror.join("app/src/extra.kt").exists(), "deleted locally => deleted remotely");
-    assert!(mirror.join("generated.txt").exists(), "files rkotlin never sent must not be deleted");
+    assert!(
+        !mirror.join("app/src/extra.kt").exists(),
+        "deleted locally => deleted remotely"
+    );
+    assert!(
+        mirror.join("generated.txt").exists(),
+        "files rkotlin never sent must not be deleted"
+    );
     let o = env.run(&["remote", "sync"]);
     assert!(
         s(&o.stdout).contains("synced 0 of"),
@@ -285,8 +313,17 @@ fn sync_run_incremental_and_paths() {
     let o = env.run(&["failcompile"]);
     assert_eq!(o.status.code(), Some(1), "{}", s(&o.stderr));
     let all = format!("{}{}", s(&o.stdout), s(&o.stderr));
-    assert!(all.contains(&format!("e: file://{}/app/src/Main.kt:3:5", env.project().display())), "{all}");
-    assert!(!all.contains(".rkotlin/ws"), "remote paths must not leak:\n{all}");
+    assert!(
+        all.contains(&format!(
+            "e: file://{}/app/src/Main.kt:3:5",
+            env.project().display()
+        )),
+        "{all}"
+    );
+    assert!(
+        !all.contains(".rkotlin/ws"),
+        "remote paths must not leak:\n{all}"
+    );
     let _ = fs::remove_dir_all(&env.root);
 }
 
@@ -294,23 +331,42 @@ fn sync_run_incremental_and_paths() {
 fn pull_copies_outputs_back_and_install_uses_local_adb() {
     let env = Env::new("pull");
     // `gradle wrapper` writes its files on the remote; they are copied back without --pull
-    let wrapper = env.project().join("gradle/wrapper/gradle-wrapper.properties");
+    let wrapper = env
+        .project()
+        .join("gradle/wrapper/gradle-wrapper.properties");
     assert!(!wrapper.exists());
     let o = env.run(&["gradle", "wrapper", "--gradle-version", "8.10.2"]);
     assert!(o.status.success(), "{}", s(&o.stderr));
-    assert_eq!(fs::read_to_string(&wrapper).unwrap().trim(), "distributionUrl=fake");
-    assert!(!env.project().join("app/build").exists(), "outputs are not pulled without --pull");
+    assert_eq!(
+        fs::read_to_string(&wrapper).unwrap().trim(),
+        "distributionUrl=fake"
+    );
+    assert!(
+        !env.project().join("app/build").exists(),
+        "outputs are not pulled without --pull"
+    );
     let o = env.run(&["--pull", "assembleDebug"]);
     assert!(o.status.success(), "{}", s(&o.stderr));
-    let apk = env.project().join("app/build/outputs/apk/debug/app-debug.apk");
-    assert!(apk.is_file(), "apk should be pulled to {}\n{}", apk.display(), s(&o.stderr));
+    let apk = env
+        .project()
+        .join("app/build/outputs/apk/debug/app-debug.apk");
+    assert!(
+        apk.is_file(),
+        "apk should be pulled to {}\n{}",
+        apk.display(),
+        s(&o.stderr)
+    );
     assert_eq!(fs::read_to_string(&apk).unwrap().trim(), "fake apk");
     fs::remove_file(&apk).unwrap();
 
     // --install without adb on PATH: a clear message, nothing else happens
     let o = env.run(&["--install", "assembleDebug"]);
     assert_eq!(o.status.code(), Some(2));
-    assert!(s(&o.stderr).contains("adb was not found"), "{}", s(&o.stderr));
+    assert!(
+        s(&o.stderr).contains("adb was not found"),
+        "{}",
+        s(&o.stderr)
+    );
     fs::remove_file(&apk).unwrap();
 
     // with adb: exactly one apk is installed on the only attached phone
@@ -333,7 +389,11 @@ fn pull_copies_outputs_back_and_install_uses_local_adb() {
         "{calls}"
     );
     let o = run_with_adb(&["devices"]);
-    assert!(s(&o.stdout).contains("SERIAL1") && s(&o.stdout).contains("Fake_Phone"), "{}", s(&o.stdout));
+    assert!(
+        s(&o.stdout).contains("SERIAL1") && s(&o.stdout).contains("Fake_Phone"),
+        "{}",
+        s(&o.stdout)
+    );
     let _ = fs::remove_dir_all(&env.root);
 }
 
@@ -357,7 +417,11 @@ fn mcp_gradle_tool_returns_compact_result() {
         out.read_line(&mut line).unwrap();
         serde_json::from_str(&line).unwrap_or_else(|e| panic!("bad JSON-RPC line `{line}`: {e}"))
     };
-    let init = call(1, "initialize", serde_json::json!({"protocolVersion":"2025-06-18"}));
+    let init = call(
+        1,
+        "initialize",
+        serde_json::json!({"protocolVersion":"2025-06-18"}),
+    );
     let instr = init["result"]["instructions"].as_str().unwrap().to_string();
     assert!(
         instr.contains("- fake [default] (ssh): local stand-in"),
@@ -372,12 +436,21 @@ fn mcp_gradle_tool_returns_compact_result() {
     assert_eq!(r["result"]["isError"], true);
     let text = r["result"]["content"][0]["text"].as_str().unwrap();
     assert!(text.contains("FAILED (exit 1)"), "{text}");
-    assert!(text.contains("== diagnostics: 1 error(s), 1 warning(s)"), "{text}");
     assert!(
-        text.contains(&format!("error: {}/app/src/Main.kt:3:5 Unresolved reference 'foo'", env.project().display())),
+        text.contains("== diagnostics: 1 error(s), 1 warning(s)"),
         "{text}"
     );
-    assert!(!text.contains("> Task"), "progress noise must be hidden:\n{text}");
+    assert!(
+        text.contains(&format!(
+            "error: {}/app/src/Main.kt:3:5 Unresolved reference 'foo'",
+            env.project().display()
+        )),
+        "{text}"
+    );
+    assert!(
+        !text.contains("> Task"),
+        "progress noise must be hidden:\n{text}"
+    );
     assert!(!text.contains(".rkotlin/ws"), "{text}");
 
     let r = call(
@@ -389,7 +462,10 @@ fn mcp_gradle_tool_returns_compact_result() {
     let text = r["result"]["content"][0]["text"].as_str().unwrap();
     assert!(text.contains("BUILD SUCCESSFUL in 1s"), "{text}");
     assert!(text.contains("pulled 1 output file"), "{text}");
-    assert!(env.project().join("app/build/outputs/apk/debug/app-debug.apk").is_file());
+    assert!(env
+        .project()
+        .join("app/build/outputs/apk/debug/app-debug.apk")
+        .is_file());
 
     // shell output is not filtered
     let r = call(
@@ -397,14 +473,23 @@ fn mcp_gradle_tool_returns_compact_result() {
         "tools/call",
         serde_json::json!({"name":"shell","arguments":{"command":"ls app/build/outputs/apk"}}),
     );
-    assert!(r["result"]["content"][0]["text"].as_str().unwrap().contains("debug"), "{r}");
+    assert!(
+        r["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("debug"),
+        "{r}"
+    );
 
     let r = call(
         5,
         "tools/call",
         serde_json::json!({"name":"instances","arguments":{"live":false}}),
     );
-    assert!(r["result"]["content"][0]["text"].as_str().unwrap().contains("fake"));
+    assert!(r["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("fake"));
     drop(stdin);
     let _ = child.wait();
     let _ = fs::remove_dir_all(&env.root);
@@ -420,7 +505,9 @@ fn missing_setup_is_explained_to_humans_and_agents() {
     let err = s(&o.stderr);
     assert!(err.contains("SETUP REQUIRED"), "{err}");
     assert!(
-        err.contains("instabox login") && err.contains("daytona login") && err.contains("--backend ssh"),
+        err.contains("instabox login")
+            && err.contains("daytona login")
+            && err.contains("--backend ssh"),
         "{err}"
     );
     assert!(err.contains("[USER]"), "{err}");
@@ -441,10 +528,17 @@ fn missing_setup_is_explained_to_humans_and_agents() {
     let o = env.run(&["build"]);
     assert_eq!(o.status.code(), Some(3));
     let err = s(&o.stderr);
-    assert!(err.contains("a (ssh): small") && err.contains("b (ssh): huge"), "{err}");
+    assert!(
+        err.contains("a (ssh): small") && err.contains("b (ssh): huge"),
+        "{err}"
+    );
 
     // daytona without a key
-    fs::write(env.project().join("rkotlin.toml"), "[instances.d]\nbackend=\"daytona\"\n").unwrap();
+    fs::write(
+        env.project().join("rkotlin.toml"),
+        "[instances.d]\nbackend=\"daytona\"\n",
+    )
+    .unwrap();
     let o = env.run(&["build"]);
     assert_eq!(o.status.code(), Some(3));
     assert!(
@@ -463,7 +557,11 @@ fn missing_setup_is_explained_to_humans_and_agents() {
     .unwrap();
     let o = env.cmd_in(&empty).arg("build").output().unwrap();
     assert_eq!(o.status.code(), Some(2));
-    assert!(s(&o.stderr).contains("not inside a Gradle project"), "{}", s(&o.stderr));
+    assert!(
+        s(&o.stderr).contains("not inside a Gradle project"),
+        "{}",
+        s(&o.stderr)
+    );
     let _ = fs::remove_dir_all(&env.root);
 }
 
@@ -487,10 +585,17 @@ fn guard_hook_blocks_local_gradle() {
     };
     let o = run("cd app && ./gradlew :app:assembleDebug");
     assert_eq!(o.status.code(), Some(2));
-    assert!(s(&o.stderr).contains("rkotlin :app:assembleDebug"), "{}", s(&o.stderr));
+    assert!(
+        s(&o.stderr).contains("rkotlin :app:assembleDebug"),
+        "{}",
+        s(&o.stderr)
+    );
     assert_eq!(run("./gradlew --version").status.code(), Some(0));
     assert_eq!(run("./gradlew tasks").status.code(), Some(0));
-    assert_eq!(run("RKOTLIN_ALLOW_LOCAL=1 ./gradlew build").status.code(), Some(0));
+    assert_eq!(
+        run("RKOTLIN_ALLOW_LOCAL=1 ./gradlew build").status.code(),
+        Some(0)
+    );
     let _ = fs::remove_dir_all(&env.root);
 }
 
@@ -500,11 +605,22 @@ fn bundled_kotlin_skills_install_offline() {
     let o = env.run(&["skills"]);
     let list = s(&o.stdout);
     assert!(o.status.success(), "{}", s(&o.stderr));
-    for n in ["kotlin-tooling-java-to-kotlin", "agp-9-upgrade", "r8-analyzer", "testing-setup"] {
+    for n in [
+        "kotlin-tooling-java-to-kotlin",
+        "agp-9-upgrade",
+        "r8-analyzer",
+        "testing-setup",
+    ] {
         assert!(list.contains(n), "{n} missing:\n{list}");
     }
-    assert!(list.contains("JetBrains") && list.contains("Google (Android)"), "{list}");
-    assert!(list.contains("https://github.com/Kotlin/kotlin-agent-skills/tree/"), "{list}");
+    assert!(
+        list.contains("JetBrains") && list.contains("Google (Android)"),
+        "{list}"
+    );
+    assert!(
+        list.contains("https://github.com/Kotlin/kotlin-agent-skills/tree/"),
+        "{list}"
+    );
 
     // `integrate --skill` installs the rkotlin skill plus every bundled one, in both agent dirs
     let o = env.run(&["integrate", "--skill"]);
@@ -512,8 +628,12 @@ fn bundled_kotlin_skills_install_offline() {
     for root in [".claude/skills", ".agents/skills"] {
         let base = env.project().join(root);
         assert!(base.join("rkotlin/SKILL.md").is_file());
-        assert!(base.join("kotlin-tooling-java-to-kotlin/SKILL.md").is_file());
-        assert!(base.join("kotlin-tooling-java-to-kotlin/LICENSE.txt").is_file());
+        assert!(base
+            .join("kotlin-tooling-java-to-kotlin/SKILL.md")
+            .is_file());
+        assert!(base
+            .join("kotlin-tooling-java-to-kotlin/LICENSE.txt")
+            .is_file());
         assert!(base.join("r8-analyzer/scripts/analyze.py").is_file());
     }
 
@@ -521,13 +641,19 @@ fn bundled_kotlin_skills_install_offline() {
     let env2 = Env::new("skills-min");
     let o = env2.run(&["integrate", "--skill", "--no-kotlin-skills"]);
     assert!(o.status.success(), "{}", s(&o.stderr));
-    assert!(env2.project().join(".agents/skills/rkotlin/SKILL.md").is_file());
+    assert!(env2
+        .project()
+        .join(".agents/skills/rkotlin/SKILL.md")
+        .is_file());
     assert!(!env2.project().join(".agents/skills/r8-analyzer").exists());
 
     // selective add, and a helpful error for a wrong name
     let o = env2.run(&["skills", "add", "r8-analyzer"]);
     assert!(o.status.success(), "{}", s(&o.stderr));
-    assert!(env2.project().join(".claude/skills/r8-analyzer/SKILL.md").is_file());
+    assert!(env2
+        .project()
+        .join(".claude/skills/r8-analyzer/SKILL.md")
+        .is_file());
     let o = env2.run(&["skills", "add", "nope"]);
     assert_eq!(o.status.code(), Some(2));
     assert!(s(&o.stderr).contains("Available:"), "{}", s(&o.stderr));

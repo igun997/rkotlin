@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: fmt
+        run: cargo fmt --all -- --check
+      - name: clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: unit + end-to-end tests
+        # The e2e suite runs the real binary against a fake ssh and needs GNU userland (Linux).
+        run: cargo test --all-targets
+      - name: MCP smoke test
+        run: |
+          cargo build --release
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+            | ./target/release/rkotlin mcp | tee /tmp/mcp.out
+          grep -q '"name":"gradle"' /tmp/mcp.out
+          grep -q '"name":"setup"' /tmp/mcp.out
+      - name: Bundled skills smoke test
+        run: |
+          ./target/release/rkotlin skills | tee /tmp/skills.out
+          grep -q kotlin-tooling-java-to-kotlin /tmp/skills.out
+          grep -q r8-analyzer /tmp/skills.out
+      - name: Guidance smoke test (no setup => exit 3 with steps)
+        run: |
+          mkdir -p /tmp/proj && cd /tmp/proj
+          echo 'rootProject.name = "p"' > settings.gradle.kts
+          set +e
+          RKOTLIN_CONFIG=/tmp/none.toml PATH=/usr/bin:/bin "$GITHUB_WORKSPACE/target/release/rkotlin" build 2> /tmp/err.txt
+          code=$?
+          set -e
+          cat /tmp/err.txt
+          test "$code" = 3
+          grep -q "SETUP REQUIRED" /tmp/err.txt

@@ -28,7 +28,11 @@ fn main() {
 
     let mut src = String::from("pub static FILES: &[(&str, &[u8], bool)] = &[\n");
     for f in files {
-        let rel = f.strip_prefix(&root).unwrap().to_string_lossy().replace('\\', "/");
+        let rel = f
+            .strip_prefix(&root)
+            .unwrap()
+            .to_string_lossy()
+            .replace('\\', "/");
         // SOURCES.tsv is read separately; only skill folders are installable
         if !rel.contains('/') {
             continue;

@@ -508,7 +508,11 @@ mod tests {
         fs::write(d.join("app/build.gradle.kts"), "").unwrap();
         fs::write(d.join("app/build/outputs/apk/app.apk"), "x").unwrap();
         // a `build` source package (no build script next to it) must travel
-        fs::write(d.join("app/src/main/kotlin/com/x/build/Info.kt"), "package com.x.build").unwrap();
+        fs::write(
+            d.join("app/src/main/kotlin/com/x/build/Info.kt"),
+            "package com.x.build",
+        )
+        .unwrap();
         fs::create_dir_all(d.join(".gradle/8.5")).unwrap();
         fs::write(d.join(".gradle/8.5/x.bin"), "x").unwrap();
         fs::create_dir_all(d.join(".kotlin/sessions")).unwrap();

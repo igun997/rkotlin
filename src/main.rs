@@ -228,7 +228,9 @@ fn dispatch(cli: Cli) -> Result<i32> {
             }
             SkillsCmd::Add { names, all, global } => {
                 if names.is_empty() && !all {
-                    anyhow::bail!("name the skills to install, or use --all. `rkotlin skills` lists them");
+                    anyhow::bail!(
+                        "name the skills to install, or use --all. `rkotlin skills` lists them"
+                    );
                 }
                 let base = if global {
                     util::home()
