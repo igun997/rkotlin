@@ -62,6 +62,14 @@ I want to work on this Kotlin/Android project with rkotlin. Read .claude/skills/
 4. When I ask for it, and only then, put the app on my phone: `rkotlin devices` to see what adb sees, then `rkotlin --install assembleDebug` (add `=SERIAL` if several phones are attached). Never install without asking.
 5. Finish by telling me what changed, the commands you ran, and the apk path under app/build/outputs/apk/.
 
+## Demo: built in a sandbox, running on a phone
+
+<p align="center">
+  <img src="assets/screenshots/demo-phone.png" alt="The examples/hello-android app running on a Samsung phone, showing the Kodi mascot animation. It was built on a Daytona sandbox with rkotlin and installed with the local adb." width="240">
+</p>
+
+`examples/hello-android` is a one-activity Android app (Kotlin, AGP 8.7, lottie-android) that plays Kodi. Built on a Daytona sandbox (4 vCPU / 8 GB) and installed with `cd examples/hello-android && rkotlin -i dt --install assembleDebug`: the first build took 1 m 20 s including dependency downloads, an incremental edit and reinstall about 6 s. The laptop only ran `adb`.
+
 ## Quick start (3 steps)
 
 ```sh
